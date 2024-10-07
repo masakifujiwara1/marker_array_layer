@@ -1,0 +1,5 @@
+<library path="lib/libmarker_array_layer">
+  <class name="marker_array_layer_namespace::MarkerArrayLayer" type="marker_array_layer_namespace::MarkerArrayLayer" base_class_type="costmap_2d::Layer">
+    <description>MarkerArrayを使用してコストマップを更新するレイヤー</description>
+  </class>
+</library>
