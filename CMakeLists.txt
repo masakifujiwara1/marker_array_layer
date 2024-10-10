@@ -19,6 +19,16 @@ add_library(marker_array_layer SHARED
   src/marker_array_layer.cpp
 )
 
+set_target_properties(marker_array_layer PROPERTIES
+  OUTPUT_NAME "marker_array_layer"
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+)
+
+target_include_directories(marker_array_layer PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 ament_target_dependencies(marker_array_layer
   rclcpp
   nav2_costmap_2d

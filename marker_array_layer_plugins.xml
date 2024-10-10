@@ -1,5 +1,5 @@
-<library path="lib/libmarker_array_layer">
-  <class name="marker_array_layer_namespace::MarkerArrayLayer" type="marker_array_layer_namespace::MarkerArrayLayer" base_class_type="nav2_costmap_2d::Layer">
-    <description>MarkerArrayを使用してコストマップを更新するレイヤー</description>
+<library path="libmarker_array_layer">
+  <class type="marker_array_layer_namespace::MarkerArrayLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>This is a costmap layer that reads marker array messages and marks their positions as obstacles.</description>
   </class>
 </library>
