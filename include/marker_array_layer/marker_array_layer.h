@@ -19,6 +19,13 @@ class MarkerArrayLayer : public nav2_costmap_2d::Layer
 {
 public:
   MarkerArrayLayer();
+
+  virtual void reset() override {
+  }
+
+  virtual bool isClearable() const override {
+      return false;
+  }
   
   virtual void onInitialize() override;
   virtual void updateBounds(double robot_x, double robot_y, double robot_yaw,
