@@ -57,7 +57,7 @@ void MarkerArrayLayer::markerArrayCallback(const visualization_msgs::msg::Marker
   }
 }
 
-void MarkerArrayLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
+void MarkerArrayLayer::updateBounds(double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/,
                                   double* min_x, double* min_y, double* max_x, double* max_y)
 {
   if (!enabled_)
@@ -74,7 +74,7 @@ void MarkerArrayLayer::updateBounds(double robot_x, double robot_y, double robot
 }
 
 void MarkerArrayLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
-                                 int min_i, int min_j, int max_i, int max_j)
+                                 int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
   if (!enabled_)
     return;
@@ -91,6 +91,18 @@ void MarkerArrayLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
       RCLCPP_WARN(rclcpp::get_logger("marker_array_layer"), "%d, %d", mx, my);
     }
   }
+}
+
+void MarkerArrayLayer::reset()
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  marker_positions_.clear();
+  RCLCPP_INFO(rclcpp::get_logger("marker_array_layer"), "Layer reset");
+}
+
+bool MarkerArrayLayer::isClearable()
+{
+  return false;
 }
 
 } // namespace marker_array_layer_namespace
