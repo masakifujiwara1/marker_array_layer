@@ -1,8 +1,6 @@
 #include "marker_array_layer/marker_array_layer.h"
 
-PLUGINLIB_EXPORT_CLASS(marker_array_layer_namespace::MarkerArrayLayer, costmap_2d::Layer)
-
-using costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::LETHAL_OBSTACLE;
 
 namespace marker_array_layer_namespace
 {
@@ -11,26 +9,44 @@ MarkerArrayLayer::MarkerArrayLayer() {}
 
 void MarkerArrayLayer::onInitialize()
 {
-  ros::NodeHandle nh("~/" + name_);
+  auto node = node_.lock();
+  if (!node) {
+    return;
+  }
+
   current_ = true;
+  
+  marker_array_sub_ = node->create_subscription<visualization_msgs::msg::MarkerArray>(
+    "/marker_array", 1, 
+    std::bind(&MarkerArrayLayer::markerArrayCallback, this, std::placeholders::_1));
 
-  marker_array_sub_ = nh.subscribe("/marker_array", 1, &MarkerArrayLayer::markerArrayCallback, this);
-
-  dsrv_ = new dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>(nh);
-  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType cb = boost::bind(
-      &MarkerArrayLayer::ReconfigureCallback, this, _1, _2);
-  dsrv_->setCallback(cb);
+  params_callback_handle_ = node->add_on_set_parameters_callback(
+    std::bind(&MarkerArrayLayer::parametersCallback, this, std::placeholders::_1));
+    
+  node->declare_parameter("enabled", rclcpp::ParameterValue(true));
+  enabled_ = node->get_parameter("enabled").as_bool();
 }
 
-void MarkerArrayLayer::ReconfigureCallback(costmap_2d::GenericPluginConfig &config, uint32_t level)
+rcl_interfaces::msg::SetParametersResult 
+MarkerArrayLayer::parametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
-  enabled_ = config.enabled;
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+
+  for (const auto & param : parameters) {
+    if (param.get_name() == "enabled") {
+      enabled_ = param.as_bool();
+    }
+  }
+
+  return result;
 }
 
-void MarkerArrayLayer::markerArrayCallback(const visualization_msgs::MarkerArrayConstPtr& msg)
+void MarkerArrayLayer::markerArrayCallback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
 {
-  ROS_WARN("MarkerArray received with %zu markers", msg->markers.size());
-  boost::recursive_mutex::scoped_lock lock(lock_);
+  RCLCPP_WARN(rclcpp::get_logger("marker_array_layer"), 
+              "MarkerArray received with %zu markers", msg->markers.size());
+  std::lock_guard<std::mutex> lock(mutex_);
   marker_positions_.clear();
   for (const auto& marker : msg->markers)
   {
@@ -42,12 +58,12 @@ void MarkerArrayLayer::markerArrayCallback(const visualization_msgs::MarkerArray
 }
 
 void MarkerArrayLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
-                                    double* min_x, double* min_y, double* max_x, double* max_y)
+                                  double* min_x, double* min_y, double* max_x, double* max_y)
 {
   if (!enabled_)
     return;
-    ROS_WARN("updateBounds called");
-  boost::recursive_mutex::scoped_lock lock(lock_);
+  RCLCPP_WARN(rclcpp::get_logger("marker_array_layer"), "updateBounds called");
+  std::lock_guard<std::mutex> lock(mutex_);
   for (const auto& point : marker_positions_)
   {
     *min_x = std::min(*min_x, point.x);
@@ -55,24 +71,15 @@ void MarkerArrayLayer::updateBounds(double robot_x, double robot_y, double robot
     *max_x = std::max(*max_x, point.x);
     *max_y = std::max(*max_y, point.y);
   }
-  // *min_x = std::min(*min_x, static_x);
-  // *min_y = std::min(*min_y, static_y);
-  // *max_x = std::max(*max_x, static_x);
-  // *max_y = std::max(*max_y, static_y);
 }
 
-// void MarkerArrayLayer::onFootprintChanged()
-// {
-//   ROS_INFO("footprint_changed");
-// }
-
-void MarkerArrayLayer::updateCosts(costmap_2d::Costmap2D& master_grid,
-                                   int min_i, int min_j, int max_i, int max_j)
+void MarkerArrayLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
+                                 int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_)
     return;
-  ROS_WARN("updateCosts called");
-  boost::recursive_mutex::scoped_lock lock(lock_);
+  RCLCPP_WARN(rclcpp::get_logger("marker_array_layer"), "updateCosts called");
+  std::lock_guard<std::mutex> lock(mutex_);
   unsigned char cost = LETHAL_OBSTACLE;
 
   for (const auto& point : marker_positions_)
@@ -81,15 +88,9 @@ void MarkerArrayLayer::updateCosts(costmap_2d::Costmap2D& master_grid,
     if (master_grid.worldToMap(point.x, point.y, mx, my))
     {
       master_grid.setCost(mx, my, cost);
-      ROS_WARN("%d, %d", mx, my);
+      RCLCPP_WARN(rclcpp::get_logger("marker_array_layer"), "%d, %d", mx, my);
     }
   }
-  // unsigned int mx, my;
-  // if (master_grid.worldToMap(static_x, static_y, mx, my))
-  // {
-  //   master_grid.setCost(mx, my, cost);
-  //   ROS_WARN("%d, %d, %hhu", mx, my, cost);
-  // }
 }
 
 } // namespace marker_array_layer_namespace
