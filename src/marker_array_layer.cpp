@@ -14,7 +14,7 @@ void MarkerArrayLayer::onInitialize()
   ros::NodeHandle nh("~/" + name_);
   current_ = true;
 
-  marker_array_sub_ = nh.subscribe("/marker_array", 1, &MarkerArrayLayer::markerArrayCallback, this);
+  marker_array_sub_ = nh.subscribe("/pred_marker", 1, &MarkerArrayLayer::markerArrayCallback, this);
 
   dsrv_ = new dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>(nh);
   dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType cb = boost::bind(
