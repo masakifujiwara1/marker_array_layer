@@ -81,7 +81,7 @@ void MarkerArrayLayer::updateCosts(costmap_2d::Costmap2D& master_grid,
     if (master_grid.worldToMap(point.x, point.y, mx, my))
     {
       master_grid.setCost(mx, my, cost);
-      ROS_WARN("%d, %d", mx, my);
+      // ROS_WARN("%d, %d", mx, my);
     }
   }
   // unsigned int mx, my;
