@@ -7,7 +7,7 @@ using costmap_2d::LETHAL_OBSTACLE;
 namespace marker_array_layer_namespace
 {
 
-MarkerArrayLayer::MarkerArrayLayer() {}
+MarkerArrayLayer::MarkerArrayLayer() : last_message_time_(ros::Time::now()) {}
 
 void MarkerArrayLayer::onInitialize()
 {
@@ -31,6 +31,7 @@ void MarkerArrayLayer::markerArrayCallback(const visualization_msgs::MarkerArray
 {
   ROS_WARN("MarkerArray received with %zu markers", msg->markers.size());
   boost::recursive_mutex::scoped_lock lock(lock_);
+  last_message_time_ = ros::Time::now();
   marker_positions_.clear();
   for (const auto& marker : msg->markers)
   {
@@ -48,6 +49,12 @@ void MarkerArrayLayer::updateBounds(double robot_x, double robot_y, double robot
     return;
     ROS_WARN("updateBounds called");
   boost::recursive_mutex::scoped_lock lock(lock_);
+
+  if ((ros::Time::now() - last_message_time_).toSec() > 0.5)
+  {
+    marker_positions_.clear();
+  }
+
   for (const auto& point : marker_positions_)
   {
     *min_x = std::min(*min_x, point.x);
