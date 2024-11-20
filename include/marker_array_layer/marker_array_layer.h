@@ -43,6 +43,8 @@ private:
   void ReconfigureCallback(costmap_2d::GenericPluginConfig &config, uint32_t level);
   dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig> *dsrv_;
 
+  ros::Time last_message_time_;
+
   ros::Subscriber marker_array_sub_;
 
   std::vector<geometry_msgs::Point> marker_positions_;
